@@ -43,8 +43,7 @@ d?.write(`<style>${q('style')?.innerHTML}</style>${[b,bP,c].filter(Boolean).join
 async p(){let p=U()
 if(p.get('p')){let t=this
 let c=await t.o(ro,t.h())||''
-let sp=`<url>${L.href}</url><page>${c}</page><system>${t.O.system}</system>`
-let r=await fetch(t.O.apiHost,{method:'POST',headers:{Authorization:' Bearer '+t.O.apiKey,'Content-Type':'application/json'},body:JSON.stringify({model:t.O.apiModel,messages:[{role:'system',content:sp},{role:'user',content:p.get('p')}],stream:false})}).then(x=>x.json())
+;let sp=`<url>${L.href}</url><page>${c}</page><system>${t.O.system}</system>`let r=await fetch(t.O.apiHost,{method:'POST',headers:{Authorization:' Bearer '+t.O.apiKey,'Content-Type':'application/json'},body:JSON.stringify({model:t.O.apiModel,messages:[{role:'system',content:sp},{role:'user',content:p.get('p')}],stream:false})}).then(x=>x.json())
 t.t.value=r?.choices?.[0]?.message.content||r?.message.content
 await t.sv()
 p.set('p','')
@@ -54,7 +53,4 @@ if(p.get('w')){await this.o(rw,this.h(),decodeURIComponent(p.get('w')))
 p.delete('w')
 h(L.pathname+'?'+p.toString()+L.hash)}}}
 let p=U(),g=(a)=>p.get(a)||LG(a)
-I=(a)=>l.setItem,o={system:'Regenerate ALL of  <page /> including users prompt '}
-O=(a,b)=>{o[a]=g(a)||l.setItem(a,prompt(a,b)||b)}
-O('apiHost','https://openrouter.ai/api/v1/chat/completions');O('apiKey');O('apiModel')
-ui=new UI(window.boot||o)</script></body></html>
+ui=new UI(window.boot||{system:'Regenerate ALL of <page/> including users prompt',apiHost:g('apiHost')||'https://openrouter.ai/api/v1/chat/completions',apiKey:g('apiKey')||l.setItem('apiKey',prompt('API Key:')),apiModel:g('apiModel')||l.setItem('apiModel',prompt('Model:'))})</script></body></html>
