@@ -4,7 +4,7 @@
 <html><head><style>
   :root{color-scheme:light dark}
   *{box-sizing:border-box}
-  body{background:#00807F}
+  body{background:teal}
   main{display:flex;flex-direction:column}
   iframe,textarea{flex:2}
   html,body,main{width:100%;height:100%;margin:0}
@@ -35,7 +35,7 @@
         await t.db(O)   // initialize db
         await t.p()     // initialize prompt
         t.b(O)          // bind listeners
-        L.hash||='#'+'home'// Default to #home if no hash is present
+        L.hash||='#'+'home'// Default to # home if no hash is present
         await t.ld()    // Load content for current page
         await t.w()
         t.t.focus()     // Focus the textarea
@@ -60,7 +60,7 @@
     async db(O){
       // Open IndexedDB and create object store if needed
       this.DB=await new P((r,j)=>{
-        let q=indexedDB['open'].(O.dbN,2)
+        let q=indexedDB['open'](O.dbN,2)
         q.onupgradeneeded=e=>e['target'].result.createObjectStore(O.dbT,{keyPath:O.key||'key'})
         q.onsuccess=e=>r(e['target'].result)
         q.onerror=e=>j(e['target'].errorCode)
