@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<!-- 1.1 -->
+<html><head><style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{background:#00807F}
+  main{display:flex;flex-direction:column}
+  iframe,textarea{flex:2}
+  html,body,main{width:100%;height:100%;margin:0}
+  body,textarea{font-family:monospace;white-space:pre-wrap}
+  .o{overflow:hidden}
+</style></head><body class="o"><script>
+  let D=document,
+  P=Promise,
+  l=localStorage,
+  L=location,
+  U=()=>new URLSearchParams(L.search),
+  LG=k=>l.getItem(k),
+  ro='readonly',
+  rw='readwrite',
+  q=(q)=>D.querySelector(q),
+  c=(e)=>D.createElement(e),
+  h=(s)=>{history.replaceState(null, '', s);L.reload()}
+  
+  class UI{
+    constructor(O={}){this.s(O)}
+    
+    // start things off
+    s(O){
+      let t=this
+      t.O=O
+      ;(async () => {
+        t.el(O)         // initialize and arrange elements
+        await t.db(O)   // initialize db
+        await t.p()     // initialize prompt
+        t.b(O)          // bind listeners
+        L.hash||='#home'// Default to #home if no hash is present
+        await t.ld()    // Load content for current page
+        await t.w()
+        t.t.focus()     // Focus the textarea
+      })()
+    }
+    
+    // initialize and arrange elements
+    el(O){
+      let t=this
+      O.dbN||='os'
+      O.dbT||='files'
+      t.$=q(O.target||'body')
+      t.m=c('main')
+      t.i=c('iframe')
+      t.t=c('textarea')
+      t.$.append(t.m)
+      t.m.append(t.i)
+      t.m.append(t.t)
+    }
+    
+    // initialize database
+    async db(O){
+      // Open IndexedDB and create object store if needed
+      this.DB=await new P((r,j)=>{
+        let q=indexedDB.open(O.dbN,2)
+        q.onupgradeneeded=e=>e.target.result.createObjectStore(O.dbT,{keyPath:O.key||'key'})
+        q.onsuccess=e=>r(e.target.result)
+        q.onerror=e=>j(e.target.errorCode)
+      })                    
+    }
+    
+    // Perform database operations (read/write)
+    async o(m,k,v){
+      let s=this.DB.transaction(this.O.dbT,m).objectStore(this.O.dbT)
+      return v?s.put({key:k,value:v}):new P(r=>s.get(k).onsuccess=x=>r(x.target.result?.value))
+    }
+    
+    // Bind event listeners for input changes and navigation events
+    b(){
+      this.t.oninput=()=>{
+        cancelAnimationFrame(this.S)
+        this.S=requestAnimationFrame(()=>this.sv())
+      }
+      onhashchange=()=>this.ld()
+    }
+    
+    // Gets the hash part of the url
+    h(){return L.hash.slice(1)||'home'}
+    
+    // Save the current page's content to the database and sync it across tabs
+    async sv(){
+      let k=this.h()
+      if(k){
+        await this.o(rw,k,this.t.value)
+      }
+    }
+    
+    // Load content for the current page from the database and update preview
+    async ld(){
+      let c = await this.o(ro, this.h())
+      this.t.value = c||''
+      this.up(c || '')
+    }
+    
+    // Update the iframe preview with the current content and boot parameters (if any)
+    // ?b to boot
+    async up(c){
+      let b = await this.o(ro,'boot') || '' // Boot
+      let bP = '' // boot Param
+      if(U().get('b')){ 
+        bP = await P.all(U().get('b').split(',')
+        .map(k=>this.o(ro,k)))
+        .then(b=>b.filter(Boolean).join('\n')) // Combine boot parameters if any are specified in URL search params
+      }
+      let d=this.i.contentDocument 
+      d?.write(`<style>${q('style')?.innerHTML}</style>${[b, bP, c].filter(Boolean).join('\n')}`);
+      d?.close() 
+    }
+    
+    // ?p to prompt: URL handling to generate or modify content
+    async p(){
+      let p=U()
+      if(p.get('p')){
+        let t=this
+        let c = await t.o(ro,t.h()) || '' // Load existing content
+        let sp=`<url>${L.href}</url><page>${c}</page><system>${t.O.system}</system>`
+        
+        // Fetch AI-generated content based on the prompt
+        let r=await fetch(t.O.apiHost, {
+          method:'POST',
+          headers: {Authorization:' Bearer ' + t.O.apiKey, 'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            model: t.O.apiModel,
+            messages: [{role: 'system', content: sp}, {role: 'user', content: p.get('p')}],
+            stream: false
+          })
+        }).then(x=>x.json())
+        
+        // Update textarea and save content
+        t.t.value = r?.choices?.[0]?.message.content || r?.message.content
+        await t.sv()
+        
+        // Clear ?prompt from URL
+        p.set('p','')
+        h(L.pathname + '?' + p.toString() + L.hash)
+      }
+    }
+    // ?w to write the contents into the key
+    async w() {
+      let p = U()
+      if (p.get('w')) {
+        // Write to the database
+        await this.o(
+          rw,
+          this.h(), // Get the current hash as the key
+          decodeURIComponent(p.get('w')) // Decode the URL-encoded value
+        )
+        p.delete('w')
+        h(L.pathname + '?' + p.toString() + L.hash)
+      }
+    }
+  }
+  
+  let p = U(), g = (a) => p.get(a) || LG(a)
+  ui=new UI(window.boot||{
+    system: 'Regenerate ALL of <page/> including users prompt',
+    apiHost: g('apiHost') || 'https://openrouter.ai/api/v1/chat/completions',
+    apiKey: g('apiKey') || l.setItem('apiKey', prompt('API Key:')),
+    apiModel: g('apiModel') || l.setItem('apiModel', prompt('Model:'))
+  })
+</script></body></html>

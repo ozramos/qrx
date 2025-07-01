@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html><head><style>:root{color-scheme:light dark}*{box-sizing:border-box}body{background:#00807f}main{display:flex;flex-direction:column}iframe,textarea{flex:2}html,body,main{width:100%;height:100%;margin:0}body,textarea{font-family:monospace;white-space:pre-wrap}.o{overflow:hidden}</style></head><body class=o><script>let D=document,P=Promise,l=localStorage,L=location,U=()=>new URLSearchParams(L.search),LG=k=>l.getItem(k),ro='readonly',rw='readwrite',q=(q)=>D.querySelector(q),c=(e)=>D.createElement(e),h=(s)=>{history.replaceState(null,'',s);L.reload()}
+class UI{constructor(O={}){this.s(O)}
+s(O){let t=this
+t.O=O;(async()=>{t.el(O)
+await t.db(O)
+await t.p()
+t.b(O)
+L.hash||='#home'
+await t.ld()
+await t.w()
+t.t.focus()})()}
+el(O){let t=this
+O.dbN||='os'
+O.dbT||='files'
+t.$=q(O.target||'body')
+t.m=c('main')
+t.i=c('iframe')
+t.t=c('textarea')
+t.$.append(t.m)
+t.m.append(t.i)
+t.m.append(t.t)}
+async db(O){this.DB=await new P((r,j)=>{let q=indexedDB.open(O.dbN,2)
+q.onupgradeneeded=e=>e.target.result.createObjectStore(O.dbT,{keyPath:O.key||'key'})
+q.onsuccess=e=>r(e.target.result)
+q.onerror=e=>j(e.target.errorCode)})}
+async o(m,k,v){let s=this.DB.transaction(this.O.dbT,m).objectStore(this.O.dbT)
+return v?s.put({key:k,value:v}):new P(r=>s.get(k).onsuccess=x=>r(x.target.result?.value))}
+b(){this.t.oninput=()=>{cancelAnimationFrame(this.S)
+this.S=requestAnimationFrame(()=>this.sv())}
+onhashchange=()=>this.ld()}
+h(){return L.hash.slice(1)||'home'}
+async sv(){let k=this.h()
+if(k){await this.o(rw,k,this.t.value)}}
+async ld(){let c=await this.o(ro,this.h())
+this.t.value=c||''
+this.up(c||'')}
+async up(c){let b=await this.o(ro,'boot')||''
+let bP=''
+if(U().get('b')){bP=await P.all(U().get('b').split(',').map(k=>this.o(ro,k))).then(b=>b.filter(Boolean).join('\n'))}
+let d=this.i.contentDocument
+d?.write(`<style>${q('style')?.innerHTML}</style>${[b,bP,c].filter(Boolean).join('\n')}`);d?.close()}
+async p(){let p=U()
+if(p.get('p')){let t=this
+let c=await t.o(ro,t.h())||''
+let sp=`<url>${L.href}</url><page>${c}</page><system>${t.O.system}</system>`
+let r=await fetch(t.O.apiHost,{method:'POST',headers:{Authorization:' Bearer '+t.O.apiKey,'Content-Type':'application/json'},body:JSON.stringify({model:t.O.apiModel,messages:[{role:'system',content:sp},{role:'user',content:p.get('p')}],stream:false})}).then(x=>x.json())
+t.t.value=r?.choices?.[0]?.message.content||r?.message.content
+await t.sv()
+p.set('p','')
+h(L.pathname+'?'+p.toString()+L.hash)}}
+async w(){let p=U()
+if(p.get('w')){await this.o(rw,this.h(),decodeURIComponent(p.get('w')))
+p.delete('w')
+h(L.pathname+'?'+p.toString()+L.hash)}}}
+let p=U(),g=(a)=>p.get(a)||LG(a)
+I=(a)=>l.setItem,o={system:'Regenerate ALL of  <page /> including users prompt '}
+O=(a,b)=>{o[a]=g(a)||l.setItem(a,prompt(a,b)||b)}
+O('apiHost','https://openrouter.ai/api/v1/chat/completions');O('apiKey');O('apiModel')
+ui=new UI(window.boot||o)</script></body></html>
